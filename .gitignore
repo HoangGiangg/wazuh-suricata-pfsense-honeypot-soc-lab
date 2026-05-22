@@ -1,0 +1,58 @@
+# Virtual machines
+*.vdi
+*.vmdk
+*.vbox
+*.vbox-prev
+*.ova
+*.ovf
+*.iso
+*.qcow2
+*.raw
+*.img
+Snapshots/
+VirtualBox VMs/
+VMware/
+
+# Logs and captures
+*.log
+*.pcap
+*.pcapng
+*.evtx
+alerts.json
+archives.json
+eve.json
+cowrie.json
+tanner_report.json
+log_session.json
+log_auth.csv
+
+# Secrets
+.env
+*.key
+*.pem
+id_rsa
+id_rsa.pub
+credentials.txt
+passwords.txt
+secrets/
+tokens/
+license*
+*.bak
+*.backup
+
+# Sensitive config backups
+config.xml
+client.keys
+ossec.conf
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
