@@ -1,0 +1,22 @@
+<group name="ai-alerts,local,">
+  <rule id="101800" level="8">
+    <decoded_as>json</decoded_as>
+    <field name="predicted_risk">medium</field>
+    <description>AI alert: medium risk event detected</description>
+    <group>ai,medium,</group>
+  </rule>
+
+  <rule id="101801" level="12">
+    <decoded_as>json</decoded_as>
+    <field name="predicted_risk">high</field>
+    <description>AI alert: high risk event detected</description>
+    <group>ai,high,</group>
+  </rule>
+
+  <rule id="101802" level="15">
+    <decoded_as>json</decoded_as>
+    <field name="predicted_risk">critical</field>
+    <description>AI alert: critical risk event detected</description>
+    <group>ai,critical,</group>
+  </rule>
+</group>

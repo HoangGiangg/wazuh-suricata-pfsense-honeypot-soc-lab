@@ -1,0 +1,75 @@
+<group name="suricata,ids,network,">
+
+  <!-- 1. Rule gốc: mọi alert từ Suricata -->
+  <rule id="100500" level="5">
+    <decoded_as>suricata-eve-json</decoded_as>
+    <field name="event_type">alert</field>
+    <description>Suricata alert detected: $(alert.signature)</description>
+    <group>suricata_alert,</group>
+  </rule>
+
+  <!-- 2. ICMP ping -->
+  <rule id="100501" level="3">
+    <if_sid>100500</if_sid>
+    <field name="proto">ICMP</field>
+    <field name="alert.signature_id">2100366</field>
+    <description>ICMP Ping detected: $(src_ip) -&gt; $(dest_ip)</description>
+    <group>suricata_icmp,ping,</group>
+  </rule>
+
+  <!-- 3. Scan / reconnaissance -->
+  <rule id="100502" level="8">
+    <if_sid>100500</if_sid>
+    <match>ET SCAN|GPL SCAN|Nmap|nmap|scan</match>
+    <description>Scan activity detected: $(alert.signature) | $(src_ip) -&gt; $(dest_ip):$(dest_port)</description>
+    <group>suricata_scan,recon,</group>
+  </rule>
+
+  <!-- 4. Web attack -->
+<rule id="100503" level="9">
+  <if_sid>100500</if_sid>
+  <match>SQL|XSS|Injection|Traversal|WEB_SERVER|http|HTTP</match>
+  <description>Web attack detected: $(alert.signature) | $(src_ip) -&gt; $(dest_ip)</description>
+  <group>suricata_web_attack,</group>
+</rule>
+  <!-- 5. High severity -->
+  <rule id="100504" level="10">
+    <if_sid>100500</if_sid>
+    <field name="alert.severity">1|2</field>
+    <description>High severity Suricata alert: $(alert.signature) | $(src_ip):$(src_port) -&gt; $(dest_ip):$(dest_port)</description>
+    <group>suricata_high,critical,</group>
+  </rule>
+
+  <!-- 6. Blocked / dropped traffic -->
+  <rule id="100505" level="8">
+    <if_sid>100500</if_sid>
+    <field name="alert.action">blocked|drop|dropped</field>
+    <description>Blocked traffic detected: $(alert.signature) | $(src_ip) -&gt; $(dest_ip)</description>
+    <group>suricata_blocked,</group>
+  </rule>
+
+
+<!-- Scan nhiều lần trong 60s thì redirect -->
+  <rule id="100510" level="12" frequency="2" timeframe="60">
+    <if_matched_sid>100502</if_matched_sid>
+    <same_source_ip />
+    <description>Redirect candidate: repeated scan from $(src_ip)</description>
+    <group>honeypot_redirect,</group>
+  </rule>
+
+  <!-- Web attack lặp lại trong 60s thì redirect -->
+  <rule id="100511" level="12" frequency="2" timeframe="60">
+    <if_matched_sid>100503</if_matched_sid>
+    <same_source_ip />
+    <description>Redirect candidate: repeated web attack from $(src_ip)</description>
+    <group>honeypot_redirect,</group>
+  </rule>
+
+  <!-- High severity thì redirect ngay -->
+  <rule id="100512" level="13">
+    <if_sid>100504</if_sid>
+    <description>Redirect candidate: high severity alert from $(src_ip)</description>
+    <group>honeypot_redirect,high,</group>
+  </rule>
+
+</group>

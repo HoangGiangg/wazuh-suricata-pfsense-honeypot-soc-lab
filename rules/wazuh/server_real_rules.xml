@@ -1,0 +1,75 @@
+<group name="server-real,local,">
+
+  <!-- SSH fail: dùng rule gốc 5710 -->
+  <rule id="100200" level="8">
+    <if_sid>5710</if_sid>
+    <description>server-real: SSH authentication failed</description>
+    <group>server-real,auth_fail,ssh,</group>
+  </rule>
+
+  <!-- SSH brute-force: gom nhiều 5710 từ cùng IP -->
+  <rule id="100201" level="12" frequency="5" timeframe="120">
+    <if_matched_sid>5710</if_matched_sid>
+    <same_source_ip />
+    <description>server-real: Possible SSH brute force from same source IP</description>
+    <group>server-real,bruteforce,ssh,</group>
+  </rule>
+
+  <!-- Sudo thành công -->
+  <rule id="100210" level="6">
+    <if_sid>5402</if_sid>
+    <description>server-real: Successful sudo to root executed</description>
+    <group>server-real,sudo,</group>
+  </rule>
+
+  <!-- Sudo nhạy cảm -->
+  <rule id="100211" level="10">
+    <if_sid>5402</if_sid>
+    <match type="pcre2">/etc/nginx|/etc/passwd|/etc/sudoers|/var/www/protected-web|useradd|usermod|passwd|chmod|chown|curl|wget</match>
+    <description>server-real: Sensitive sudo command executed</description>
+    <group>server-real,sudo_sensitive,post_exploitation,</group>
+  </rule>
+
+  <!-- Web probing: match trực tiếp raw access log -->
+  <rule id="100220" level="8">
+    <if_sid>31108</if_sid>
+    <url type="pcre2">^/(?:\.env|wp-admin|phpmyadmin|\.git|backup|admin|shell|vendor|boaform)(?:/|$)</url>
+    <description>server-real: Suspicious web probing against protected-web</description>
+    <group>server-real,web_probe,web,</group>
+  </rule>
+
+  <rule id="100221" level="10" frequency="6" timeframe="60">
+    <if_matched_sid>100220</if_matched_sid>
+    <same_source_ip />
+    <description>server-real: Repeated suspicious web probing against protected-web</description>
+    <group>server-real,web_recon,web,</group>
+  </rule>
+
+  <!-- FIM nginx -->
+  <rule id="100230" level="12">
+    <if_group>syscheck</if_group>
+    <match>/etc/nginx/</match>
+    <description>server-real: Critical nginx configuration file changed</description>
+    <group>server-real,fim,config_change,</group>
+  </rule>
+  <!-- FIM web -->
+  <rule id="100231" level="10">
+    <if_group>syscheck</if_group>
+    <match>/var/www/protected-web/</match>
+    <description>server-real: Web content changed on protected-web</description>
+    <group>server-real,fim,web_change,</group>
+  </rule>
+  <rule id="100240" level="14" frequency="2" timeframe="120">
+    <if_sid>100230</if_sid>
+    <if_matched_sid>100211</if_matched_sid>
+    <description>server-real: Privilege escalation followed by nginx config change</description>
+    <group>server-real,correlation,post_exploitation,</group>
+  </rule>
+ <rule id="100241" level="14" frequency="2" timeframe="180">
+  <if_sid>100231</if_sid>
+  <if_matched_sid>100220</if_matched_sid>
+  <description>server-real: Suspicious web probing followed by web content change</description>
+  <group>server-real,correlation,web_compromise,</group>
+ </rule>
+
+</group>

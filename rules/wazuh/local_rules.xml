@@ -1,0 +1,160 @@
+<group name="local,">
+
+  <!-- =========================
+       Giai doan 1: Nhom luat nen
+       ========================= -->
+
+  <!-- Cowrie: co ket noi den SSH honeypot -->
+  <rule id="100110" level="4">
+    <decoded_as>json</decoded_as>
+    <field name="eventid">cowrie.session.connect</field>
+    <description>Cowrie - Co ket noi den SSH honeypot</description>
+    <group>cowrie,ssh_honeypot,recon,</group>
+  </rule>
+
+  <!-- Cowrie: phien SSH honeypot da dong -->
+  <rule id="100111" level="3">
+    <decoded_as>json</decoded_as>
+    <field name="eventid">cowrie.session.closed</field>
+    <description>Cowrie - Phien SSH honeypot da dong</description>
+    <group>cowrie,ssh_honeypot,session,</group>
+  </rule>
+
+  <!-- Tanner: request vao trang index -->
+  <rule id="100102" level="3">
+    <decoded_as>json</decoded_as>
+    <field name="response_msg.response.message.detection.name">index</field>
+    <description>Tanner - Request vao trang index</description>
+    <group>tanner,web_honeypot,baseline,</group>
+  </rule>
+
+  <!-- Heralding: co thu dang nhap vao dich vu honeypot -->
+  <rule id="100122" level="7">
+    <decoded_as>json</decoded_as>
+    <field name="num_auth_attempts">1</field>
+    <description>Heralding - Co thu dang nhap vao dich vu honeypot</description>
+    <group>heralding,auth_attempt,credential_attack,</group>
+  </rule>
+
+  <!-- =========================
+       Giai doan 2:  Xac thuc bat thuong va brute-force
+       ========================= -->
+
+  <!-- Cowrie: dang nhap that bai -->
+  <rule id="100130" level="6">
+    <decoded_as>json</decoded_as>
+    <field name="eventid">cowrie.login.failed</field>
+    <description>Cowrie - Dang nhap that bai vao SSH honeypot</description>
+    <group>cowrie,auth_failed,credential_attack,</group>
+  </rule>
+
+  <!-- Cowrie: nhieu lan dang nhap that bai trong thoi gian ngan -->
+  <rule id="100131" level="10" frequency="5" timeframe="60">
+    <if_matched_sid>100130</if_matched_sid>
+    <description>Cowrie - Nghi van brute-force SSH</description>
+    <group>cowrie,bruteforce,high_risk,</group>
+  </rule>
+
+  <!-- Cowrie: dang nhap thanh cong -->
+  <rule id="100132" level="12">
+    <decoded_as>json</decoded_as>
+    <field name="eventid">cowrie.login.success</field>
+    <description>Cowrie - Dang nhap thanh cong vao SSH honeypot</description>
+    <group>cowrie,auth_success,critical,</group>
+  </rule>
+
+  <!-- Heralding: nhieu lan thu dang nhap trong thoi gian ngan -->
+  <rule id="100123" level="9" frequency="3" timeframe="120">
+    <if_matched_sid>100122</if_matched_sid>
+    <description>Heralding - Nghi van brute-force vao dich vu honeypot</description>
+    <group>heralding,bruteforce,credential_attack,</group>
+  </rule>
+
+  <!-- =========================
+       Giai doan 3: Tanner - khai thac web
+       ========================= -->
+
+  <!-- Tanner: request web co dau hieu bat thuong -->
+  <rule id="100140" level="6">
+    <decoded_as>json</decoded_as>
+    <match>%27|union|select|alert\(|onerror=|onload=|\.\./|%2e%2e%2f|/etc/passwd|%3Cscript%3E</match>
+    <description>Tanner - Request web co dau hieu bat thuong</description>
+    <group>tanner,web_attack,suspicious_request,</group>
+  </rule>
+
+  <!-- Tanner: nghi van SQL injection -->
+<rule id="100141" level="9">
+  <decoded_as>json</decoded_as>
+  <match>%27+OR+%271%27=%271|union+select|union select|or+1=1|or 1=1|information_schema|sleep(</match>
+  <description>Tanner - Nghi van SQL injection</description>
+  <group>tanner,web_exploit,sqli,critical,</group>
+</rule>
+
+  <!-- Tanner: nghi van XSS -->
+  <rule id="100142" level="9">
+    <decoded_as>json</decoded_as>
+    <field name="response_msg.response.message.detection.name">xss</field>
+    <description>Tanner - Nghi van XSS</description>
+    <group>tanner,web_exploit,xss,critical,</group>
+  </rule>
+
+  <!-- Tanner: nghi van directory traversal / LFI -->
+<rule id="100143" level="8">
+  <decoded_as>json</decoded_as>
+  <match>\.\./|%2e%2e%2f|/etc/passwd|/proc/self/environ|boot.ini|win.ini</match>
+  <description>Tanner - Nghi van directory traversal hoac LFI</description>
+  <group>tanner,web_exploit,lfi,high_risk,</group>
+</rule>
+  <!-- Tanner: nhieu request web bat thuong trong thoi gian ngan -->
+  <rule id="100144" level="10" frequency="5" timeframe="60">
+    <if_matched_sid>100140</if_matched_sid>
+    <description>Tanner - Nhieu request web bat thuong trong thoi gian ngan</description>
+    <group>tanner,web_attack,scanner,high_risk,</group>
+  </rule>
+
+
+  <!-- =========================
+       Giai doan 4: Cowrie - hanh vi sau xam nhap va malware
+       ========================= -->
+
+  <!-- Cowrie: co lenh duoc thuc thi trong shell -->
+  <rule id="100149" level="5">
+    <decoded_as>json</decoded_as>
+    <field name="eventid">cowrie.command.input</field>
+    <description>Cowrie - Co lenh duoc thuc thi tren SSH honeypot</description>
+    <group>cowrie,post_compromise,command_input,</group>
+  </rule>
+
+  <!-- Cowrie: lenh do tham he thong -->
+  <rule id="100150" level="7">
+    <if_sid>100149</if_sid>
+    <match>whoami|id|uname|pwd|ifconfig|ip a|ip addr|netstat|ss -tulnp|cat /etc/passwd|ls</match>
+    <description>Cowrie - Phat hien lenh do tham he thong sau xam nhap</description>
+    <group>cowrie,post_compromise,recon,</group>
+  </rule>
+
+  <!-- Cowrie: lenh nghi van tai/chay malware -->
+  <rule id="100151" level="10">
+    <if_sid>100149</if_sid>
+    <match>wget|curl|tftp|ftpget|chmod|/bin/sh|bash -c|busybox|nc |python -c|perl -e</match>
+    <description>Cowrie - Phat hien lenh nghi van tai hoac thuc thi malware</description>
+    <group>cowrie,post_compromise,malware_suspected,critical,</group>
+  </rule>
+
+  <!-- Cowrie: su kien tai file vao honeypot -->
+  <rule id="100152" level="11">
+    <decoded_as>json</decoded_as>
+    <field name="eventid">cowrie.session.file_download</field>
+    <description>Cowrie - Phat hien hanh vi tai file vao honeypot</description>
+    <group>cowrie,file_download,malware_suspected,critical,</group>
+  </rule>
+
+  <!-- Cowrie: nhieu lenh nghi van malware trong thoi gian ngan -->
+  <rule id="100153" level="12" frequency="2" timeframe="120">
+    <if_matched_sid>100151</if_matched_sid>
+    <description>Cowrie - Nhieu lenh nghi van malware trong thoi gian ngan</description>
+    <group>cowrie,post_compromise,malware_suspected,high_risk,</group>
+  </rule>
+
+
+</group>
